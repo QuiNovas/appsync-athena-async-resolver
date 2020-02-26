@@ -15,11 +15,17 @@ to `AWS AppSync`_ with the results of the SQL call.
 
 Environment Variables
 ---------------------
-
+:DATABASE: The `AWS Athena`_ Database to query. May be overridden in the ``query`` request. Defaults to ``default``
+:WORKGROUP: The `AWS Athena`_ Workgroup to use during queries. May be overridden in the ``query`` request. Defaults to ``primary``.
+:LIMIT: The maximum number of results to return during the ``results`` request. May be overridden in the ``results`` request. Defaults to ``100``.
 
 AWS Permissions Required
 ------------------------
-- AmazonAthenaFullAccess (arn:aws:iam::aws:policy/AmazonAthenaFullAccess)
+* **AmazonAthenaFullAccess** arn:aws:iam::aws:policy/AmazonAthenaFullAccess
+
+You will also require read access to the underlying `AWS Athena`_ datasource and access to any KMS
+keys used.
+
 
 Handler Method
 --------------
@@ -30,6 +36,82 @@ Handler Method
 Request Syntax
 --------------
 
+This function supports three different request type: ``query``, ``status`` and ``results``.
+These are defined below, and must be present in the ``payload`` field in `AWS AppSync`_ request mapping template.
+
+Query
+^^^^^
+
+Request::
+
+  {
+    "action": "query",
+    "arguments": {
+      "database": "foo", (OPTIONAL, defaults to the DATABASE environment variable)
+      "query": "select * from bar",
+      "workgroup": "myworkgroup" (OPTIONAL, defaults to the WORKGROUP environment variable)
+    }
+  }
+
+Response::
+
+  {
+    "id": "string", (The query execution id, used for status and results)
+    "state": ["QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED"],
+    "stateChangeReason": "string",
+    "submissionDateTime": datetime,
+    "completionDateTime": datetime (If not QUEUED or RUNNING)
+  }
+
+Status
+^^^^^^
+
+Request::
+
+  {
+    "action": "status",
+    "arguments": {
+      "id": "string"
+    }
+  }
+
+Response::
+
+  {
+    "id": "string", (The query execution id, used for status and results)
+    "state": ["QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED"],
+    "stateChangeReason": "string",
+    "submissionDateTime": datetime,
+    "completionDateTime": datetime (If not QUEUED or RUNNING)
+  }
+
+Results
+^^^^^^^
+
+Request::
+
+  {
+    "action": "results",
+    "arguments": {
+      "id": "string",
+      "limit": int, (OPTIONAL, defaults to the LIMIT environment variable)
+      "nextToken": "string" (OPTIONAL, the nextToken returned from the previous results request)
+    }
+  }
+
+Response::
+
+  {
+    "nextToken": "string", (Present if additional results exist)
+    "results": [
+      {
+        "Key": Value,
+        (Keys and values are generated from the query results. 
+        Keys are the column names, values are converted to their
+        specified types.)
+      }
+    ]
+  }
 
 Lambda Package Location
 -----------------------
