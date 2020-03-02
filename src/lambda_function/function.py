@@ -28,7 +28,7 @@ def __results(event):
         'QueryExecutionId': event['id'],
         'MaxResults': int(event.get('limit', environ.get('LIMIT', 100)))
     }
-    if 'nextToken' in event:
+    if event.get('nextToken'):
         params['NextToken'] = event['nextToken']
     response = __ATHENA.get_query_results(**params)
     meta_data = __map_meta_data(response['ResultSet']['ResultSetMetadata']['ColumnInfo'])
