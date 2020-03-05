@@ -1,10 +1,6 @@
 from athena_type_converter import convert_result_set
-from binascii import a2b_hex
 from boto3 import client
-from datetime import datetime
-from decimal import Decimal
-from distutils.util import strtobool
-from json import dumps as jsondumps, loads as jsonloads
+from json import dumps as jsondumps
 from logging import getLogger, INFO
 from os import environ
 
