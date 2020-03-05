@@ -51,7 +51,7 @@ __ATHENA = client('athena')
 
 
 def handler(event, context):
-    getLogger().debug('Processing event {}'.format(jsondumps(event)))
+    getLogger().info('Processing event {}'.format(jsondumps(event)))
     return __ACTIONS.get(event['action'], __unsupported_action)(event['arguments'])
 
 
