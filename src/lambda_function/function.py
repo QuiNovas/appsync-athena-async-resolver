@@ -10,7 +10,7 @@ from os import environ
 
 def __query(event):
     response = __ATHENA.start_query_execution(
-        QueryString=event['query'],
+        QueryString=event['query'].format(**event.get('params', {})),
         QueryExecutionContext={
             'Database': event.get('database', environ.get('DATABASE', 'default'))
         },

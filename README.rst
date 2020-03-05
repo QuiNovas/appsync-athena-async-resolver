@@ -36,8 +36,11 @@ Handler Method
 Request Syntax
 --------------
 
-This function supports three different request type: ``query``, ``status`` and ``results``.
-These are defined below, and must be present in the ``payload`` field in `AWS AppSync`_ request mapping template.
+This function supports three different request type:
+``query``, ``status`` and ``results``.
+
+These are defined below, and must be present in the ``payload``
+field in `AWS AppSync`_ request mapping template.
 
 Query
 ^^^^^
@@ -47,20 +50,35 @@ Request::
   {
     "action": "query",
     "arguments": {
-      "database": "foo", (OPTIONAL, defaults to the DATABASE environment variable)
+      "database": "foo",
       "query": "select * from bar",
-      "workgroup": "myworkgroup" (OPTIONAL, defaults to the WORKGROUP environment variable)
+      "params": {},
+      "workgroup": "myworkgroup"
     }
   }
+
+**query**: REQUIRED
+  This is the query string to be executed. It may be parameterized with
+  `PyFormat`_, using the new format `{}` `named placeholders`_ method.
+**params**: OPTIONAL
+  Required if your `query` is parameterized. The keys in this map should
+  correspond to the format names in your operation string or array.
+**database**: OPTIONAL
+  The schema/database name that you wish to query. Overrides
+  **DATABASE** if present.
+**workgroup**: OPTIONAL
+  The `AWS Athena`_ Workgroup to use during. Overrides
+  **WORKGROUP** if present.
+
 
 Response::
 
   {
-    "id": "string", (The query execution id, used for status and results)
+    "id": "string",
     "state": ["QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED"],
     "stateChangeReason": "string",
     "submissionDateTime": datetime,
-    "completionDateTime": datetime (If not QUEUED or RUNNING)
+    "completionDateTime": datetime
   }
 
 Status
@@ -75,14 +93,17 @@ Request::
     }
   }
 
+**id**:
+  The *id* returned from the *query* action
+
 Response::
 
   {
-    "id": "string", (The query execution id, used for status and results)
+    "id": "string",
     "state": ["QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED"],
     "stateChangeReason": "string",
     "submissionDateTime": datetime,
-    "completionDateTime": datetime (If not QUEUED or RUNNING)
+    "completionDateTime": datetime
   }
 
 Results
@@ -94,19 +115,26 @@ Request::
     "action": "results",
     "arguments": {
       "id": "string",
-      "limit": int, (OPTIONAL, defaults to the LIMIT environment variable)
-      "nextToken": "string" (OPTIONAL, the nextToken returned from the previous results request)
+      "limit": int,
+      "nextToken": "string"
     }
   }
+
+**id**:
+  The *id* returned from the *query* action
+**limit**: OPTIONAL
+  The number of results to return. Defaults to `100`
+**nextToken**: OPTIONAL
+  The *nextToken* returned from the previous *results* action
 
 Response::
 
   {
-    "nextToken": "string", (Present if additional results exist)
+    "nextToken": "string",
     "results": [
       {
         "Key": Value,
-        (Keys and values are generated from the query results. 
+        (Keys and values are generated from the query results.
         Keys are the column names, values are converted to their
         specified types.)
       }
@@ -115,6 +143,6 @@ Response::
 
 Lambda Package Location
 -----------------------
-https://s3.amazonaws.com/lambdalambdalambda-repo/quinovas/appsync-athena-async-resolver/appsync-athena-async-resolver-0.1.0.zip
+https://s3.amazonaws.com/lambdalambdalambda-repo/quinovas/appsync-athena-async-resolver/appsync-athena-async-resolver-0.1.2.zip
 
 License: `APL2`_
