@@ -1,20 +1,22 @@
-from binascii import a2b_hex
+from athena_type_converter import convert_result_set
 from boto3 import client
-from datetime import datetime
-from decimal import Decimal
-from distutils.util import strtobool
-from json import dumps as jsondumps, loads as jsonloads
+from json import dumps as jsondumps
 from logging import getLogger, INFO
 from os import environ
 
 
+__DATABASE = environ.get('DATABASE', 'default')
+__LIMIT = environ.get('LIMIT', 100)
+__WORKGROUP = environ.get('WORKGROUP', 'primary')
+
+
 def __query(event):
     response = __ATHENA.start_query_execution(
-        QueryString=event['query'],
+        QueryString=event['query'].format(**event.get('params', {})),
         QueryExecutionContext={
-            'Database': event.get('database', environ.get('DATABASE', 'default'))
+            'Database': event.get('database', __DATABASE)
         },
-        WorkGroup=event.get('workgroup', environ.get('WORKGROUP', 'primary'))
+        WorkGroup=event.get('workgroup', __WORKGROUP)
     )
     return __get_status(response['QueryExecutionId'])
 
@@ -26,18 +28,13 @@ def __status(event):
 def __results(event):
     params = {
         'QueryExecutionId': event['id'],
-        'MaxResults': int(event.get('limit', environ.get('LIMIT', 100)))
+        'MaxResults': int(event.get('limit', __LIMIT))
     }
     if event.get('nextToken'):
         params['NextToken'] = event['nextToken']
     response = __ATHENA.get_query_results(**params)
-    meta_data = __map_meta_data(response['ResultSet']['ResultSetMetadata']['ColumnInfo'])
-    results = []
-    rows = response['ResultSet']['Rows']
-    for n in range(1, len(rows)):
-        results.append(__map_result(meta_data, rows[n]['Data']))
     result = {
-        'results': results
+        'results': convert_result_set(response['ResultSet'])
     }
     if 'NextToken' in response:
         result['nextToken'] = response['NextToken']
@@ -51,32 +48,10 @@ __ACTIONS = {
     'results': __results
 }
 __ATHENA = client('athena')
-__ATHENA_TYPE_CONVERTERS = {
-    'boolean': lambda x: bool(strtobool(x)) if x else None,
-    'tinyint': lambda x: int(x) if x else None,
-    'smallint': lambda x: int(x) if x else None,
-    'integer': lambda x: int(x) if x else None,
-    'bigint': lambda x: int(x) if x else None,
-    'float': lambda x: float(x) if x else None,
-    'real': lambda x: float(x) if x else None,
-    'double': lambda x: float(x) if x else None,
-    'char': lambda x: x,
-    'varchar': lambda x: x,
-    'string': lambda x: x,
-    'timestamp': lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f').isoformat() if x else None,
-    'date': lambda x: datetime.strptime(x, '%Y-%m-%d').date().isoformat() if x else None,
-    'time': lambda x: datetime.strptime(x, '%H:%M:%S.%f').time().isoformat() if x else None,
-    'varbinary': lambda x: a2b_hex(''.join(x.split(' '))) if x else None,
-    'array': lambda x: x,
-    'map': lambda x: x,
-    'row': lambda x: x,
-    'decimal': lambda x: Decimal(x) if x else None,
-    'json': lambda x: jsonloads(x) if x else None,
-}
 
 
 def handler(event, context):
-    getLogger().debug('Processing event {}'.format(jsondumps(event)))
+    getLogger().info('Processing event {}'.format(jsondumps(event)))
     return __ACTIONS.get(event['action'], __unsupported_action)(event['arguments'])
 
 
@@ -95,20 +70,6 @@ def __get_status(query_execution_id):
     if 'CompletionDateTime' in response_status:
         status['completionDateTime'] = response_status['CompletionDateTime'].isoformat()
     return status
-
-
-def __map_meta_data(meta_data):
-    mapped_meta_data = []
-    for column in meta_data:
-        mapped_meta_data.append((column['Name'], __ATHENA_TYPE_CONVERTERS[column['Type']]))
-    return mapped_meta_data
-
-
-def __map_result(meta_data, data):
-    result = {}
-    for n in range(len(data)):
-        result[meta_data[n][0]] = meta_data[n][1](data[n].get('VarCharValue', None))
-    return result
 
 
 def __unsupported_action(event):
