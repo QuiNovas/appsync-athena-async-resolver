@@ -8,13 +8,18 @@ from logging import getLogger, INFO
 from os import environ
 
 
+__DATABASE = environ.get('DATABASE', 'default')
+__LIMIT = environ.get('LIMIT', 100)
+__WORKGROUP = environ.get('WORKGROUP', 'primary')
+
+
 def __query(event):
     response = __ATHENA.start_query_execution(
         QueryString=event['query'].format(**event.get('params', {})),
         QueryExecutionContext={
-            'Database': event.get('database', environ.get('DATABASE', 'default'))
+            'Database': event.get('database', __DATABASE)
         },
-        WorkGroup=event.get('workgroup', environ.get('WORKGROUP', 'primary'))
+        WorkGroup=event.get('workgroup', __WORKGROUP)
     )
     return __get_status(response['QueryExecutionId'])
 
@@ -26,7 +31,7 @@ def __status(event):
 def __results(event):
     params = {
         'QueryExecutionId': event['id'],
-        'MaxResults': int(event.get('limit', environ.get('LIMIT', 100)))
+        'MaxResults': int(event.get('limit', __LIMIT))
     }
     if event.get('nextToken'):
         params['NextToken'] = event['nextToken']
