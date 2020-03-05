@@ -143,6 +143,6 @@ Response::
 
 Lambda Package Location
 -----------------------
-https://s3.amazonaws.com/lambdalambdalambda-repo/quinovas/appsync-athena-async-resolver/appsync-athena-async-resolver-0.1.2.zip
+https://s3.amazonaws.com/lambdalambdalambda-repo/quinovas/appsync-athena-async-resolver/appsync-athena-async-resolver-0.1.3.zip
 
 License: `APL2`_

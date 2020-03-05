@@ -9,7 +9,7 @@ lambda_name = 'appsync-athena-async-resolver'
 # Versions should comply with PEP440.  For a discussion on single-sourcing
 # the version across setup.py and the project code, see
 # https://packaging.python.org/en/latest/single_source_version.html
-lambda_version = '0.1.2'
+lambda_version = '0.1.3'
 
 lambda_description = 'AppSync resolver lambda function for Athena that allows for time-seperated queries and results gathering'
 

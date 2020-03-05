@@ -1,4 +1,5 @@
-from athena_type_converter import convert_result_set
+from athena_type_converter import convert_result_set, TYPE_CONVERTERS
+from base64 import b64encode
 from boto3 import client
 from json import dumps as jsondumps
 from logging import getLogger, INFO
@@ -8,6 +9,15 @@ from os import environ
 __DATABASE = environ.get('DATABASE', 'default')
 __LIMIT = environ.get('LIMIT', 100)
 __WORKGROUP = environ.get('WORKGROUP', 'primary')
+__timestamp = TYPE_CONVERTERS['timestamp']
+TYPE_CONVERTERS['timestamp'] = lambda x: __timestamp(x).isoformat()
+__date = TYPE_CONVERTERS['date']
+TYPE_CONVERTERS['date'] = lambda x: __date(x).isoformat()
+__time = TYPE_CONVERTERS['time']
+TYPE_CONVERTERS['time'] = lambda x: __time(x).isoformat()
+__varbinary = TYPE_CONVERTERS['varbinary']
+TYPE_CONVERTERS['varbinary'] = lambda x: b64encode(__varbinary(x))
+TYPE_CONVERTERS['decimal'] = lambda x: float(x) if x else None
 
 
 def __query(event):
